@@ -1,0 +1,14 @@
+package:
+  name: muster-service-nginx
+  version: 0.0.1
+
+build:
+  number: {{environ.get('BINSTAR_BUILD', 1)}}
+
+requirements:
+  build:
+    - python
+  run:
+    - python
+    - nginx
+
