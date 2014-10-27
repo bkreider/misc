@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Check to see if the build number conflicts with a local built package.  If
 so, set the ENVIRON variable BINSTAR_BUILD_NUMBER with a non-conflicting number
@@ -68,7 +69,9 @@ def main():
         sys.exit(1)
 
     os.environ["BINSTAR_BUILD"] = number
-    subprocess.call(["conda-build {}".format(path)], 
+    #
+    # NEED TO RENAME conda-build so we can monkeypatch
+    subprocess.call([".conda-build {}".format(path)], 
         #stdout=sys.stdout,
         #stderr=sys.stderr,
         shell=True)
