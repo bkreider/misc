@@ -6,7 +6,7 @@ import logging
 import logging.handlers
 
 from math import pi
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from bokeh.charts import cursession
 from bokeh.plotting import figure, output_server, show
@@ -95,7 +95,7 @@ def parse_line(line):
         return result
 
     result = [temp, dt_object]
-    log.debug("Returning %s" % (result,))
+    log.debug("Returning %s %s" % (result, time.mktime(dt_object.timetuple()) * 1000))
     return result
 
 def decimate(gen, skip=10):
@@ -106,6 +106,19 @@ def decimate(gen, skip=10):
         except StopIteration:
             return ""
     return line
+
+def update_range(ds, fig, window):
+    #if len(ds.data['x']) > window:
+    #    fig.x_range.start = time.mktime(ds.data['x'][-window].timetuple()) * 1000 - 20000000
+    #    fig.x_range.end = time.mktime(ds.data['x'][-1].timetuple()) * 1000 - 20000000
+
+    now = datetime.now()
+    start = now - timedelta(hours=window)
+    #fig.x_range.start = time.mktime(start.timetuple()) * 1000 - 20000000
+    #fig.x_range.end = time.mktime(now.timetuple()) * 1000 - 20000000
+
+    #cursession().store_objects(fig.x_range)
+    cursession().store_objects()
 
 def update_series(ds, xvalue, yvalue):
     ds.data['x'].append(xvalue)
@@ -118,12 +131,18 @@ def main():
 
     output_server("Temp Chart")
 
-    window = 100
+    window = 200
     width = 800
     height = 200
 
+    now = datetime.now()
+    start = now - timedelta(hours=window)
+    r_start = time.mktime(start.timetuple()) * 1000 - 20000000
+    r_end = time.mktime(now.timetuple()) * 1000 - 20000000
+    ran = Range1d(r_start, r_end)
+
     # line chart
-    line_fig = figure(plot_width=width, plot_height=height)
+    line_fig = figure(plot_width=width, plot_height=height) #, x_range=ran)
     line = line_fig.line(x=[], y=[])
 
     # circle chart
@@ -131,9 +150,9 @@ def main():
     circle = c_fig.circle(x=[], y=[], size=1)
 
     # format axes
-    line_fig.xaxis[0].formatter = DatetimeTickFormatter(formats=dict(days=["%F %T"]))
+    line_fig.xaxis[0].formatter = DatetimeTickFormatter(formats=dict(days=["%T"]))
     line_fig.xaxis.major_label_orientation = pi/4
-    c_fig.xaxis[0].formatter = DatetimeTickFormatter(formats=dict(days=["%F %T"]))
+    c_fig.xaxis[0].formatter = DatetimeTickFormatter(formats=dict(days=["%T"]))
     c_fig.xaxis.major_label_orientation = pi/4
 
     p = vplot(line_fig, c_fig)
@@ -142,7 +161,7 @@ def main():
     line_ds = line.select(dict(type=GlyphRenderer))[0].data_source
     circle_ds = circle.select(dict(type=GlyphRenderer))[0].data_source
 
-    lines = tail_generator(exit_after=2)
+    lines = tail_generator(exit_after=0)
     if True:
         for line in lines:
             line = decimate(lines, skip=300)
@@ -150,7 +169,9 @@ def main():
             if temp is None:
                 continue
             update_series(line_ds, date, temp)
+            update_range(line_ds, line_fig, 60)
             update_series(circle_ds, date, temp)
+            update_range(circle_ds, c_fig, 12)
             time.sleep(0.01)
 
     return c_fig, circle
