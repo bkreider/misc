@@ -71,7 +71,7 @@ def main():
     os.environ["BINSTAR_BUILD"] = number
     #
     # NEED TO RENAME conda-build so we can monkeypatch
-    subprocess.call([".conda-build {}".format(path)], 
+    subprocess.call([".conda-build {}".format(" ".join(sys.argv[1:]))], 
         #stdout=sys.stdout,
         #stderr=sys.stderr,
         shell=True)
