@@ -1,0 +1,33 @@
+#!/bin/bash
+
+if [[ "x$1" != "x" ]]
+then
+   if [[ "x$2" != "x" ]]
+   then
+        if [[ "x$3" != "x" ]]
+        then
+            cmd="conda search $1[version=$2,subdir=$3]"
+        else  
+            cmd="conda search $1[version=$2]"
+        fi
+   else
+        cmd="conda search $1"
+   fi
+else
+   echo "Need at least one parameter"
+   exit -1
+fi
+
+echo "Command: $cmd"
+#$cmd
+$cmd  --json | jq ".$1[] | 
+  {
+    name, 
+    timestamp: (.timestamp/1000|todateiso8601), 
+    sha256, 
+    version,
+    build, 
+    channel, 
+    subdir, 
+    depends
+  }"
